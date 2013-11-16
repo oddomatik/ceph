@@ -7688,7 +7688,7 @@ bool ReplicatedPG::start_recovery_ops(
           Backfilled())));
   }
 
-  return 0;
+  return false;
 }
 
 /**
