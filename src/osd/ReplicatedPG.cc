@@ -902,7 +902,6 @@ void ReplicatedPG::do_request(
   }
 }
 
-
 /** do_op - do an op
  * pg lock will be held (if multithreaded)
  * osd_lock NOT held.
@@ -1047,7 +1046,7 @@ void ReplicatedPG::do_op(OpRequestRef op)
   bool before_backfill = false;
   if (backfill_target >= 0) {
     backfill_target_info = &peer_info[backfill_target];
-    before_backfill = obc->obs.oi.soid < backfill_target_info->last_backfill;
+    before_backfill = obc->obs.oi.soid <= backfill_target_info->last_backfill;
   }
 
   // src_oids
@@ -1096,7 +1095,10 @@ void ReplicatedPG::do_op(OpRequestRef op)
 	    osd->reply_op_error(op, -EINVAL);
 	  } else if (is_degraded_object(sobc->obs.oi.soid) ||
 		   (before_backfill && sobc->obs.oi.soid > backfill_target_info->last_backfill)) {
-	    wait_for_degraded_object(sobc->obs.oi.soid, op);
+	    if (is_degraded_object(sobc->obs.oi.soid))
+	      wait_for_degraded_object(sobc->obs.oi.soid, op);
+	    else
+	      waiting_for_degraded_object[sobc->obs.oi.soid].push_back(op);
 	    dout(10) << " writes for " << obc->obs.oi.soid << " now blocked by "
 		     << sobc->obs.oi.soid << dendl;
 	    obc->blocked_by = sobc;
