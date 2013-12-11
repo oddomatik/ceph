@@ -915,28 +915,20 @@ ReplicatedPG::earliest_backfill()
   return e;
 }
 
-hobject_t
-ReplicatedPG::latest_backfill()
-{
-  hobject_t l;
-  for (unsigned i = 0; i < backfill_targets.size(); ++i) {
-    int bt = backfill_targets[i];
-    if (peer_info[bt].last_backfill > l)
-      l = peer_info[bt].last_backfill;
-  }
-  return l;
-}
-
 bool
 ReplicatedPG::is_before_backfill(const hobject_t& oid)
 {
+  // XXX: Not using MAX(last_backfill_started, earliest_backfill());
+  // because original code didn't.  Backfills in flight would racey.
   return oid <= earliest_backfill();
 }
 
 bool
 ReplicatedPG::is_after_backfill(const hobject_t& oid)
 {
-  return oid > latest_backfill();
+  // XXX: Not using MAX(last_backfill_started, earliest_backfill());
+  // because original code didn't.  Backfills in flight would be racey.
+  return oid > earliest_backfill();
 }
 
 /** do_op - do an op
@@ -1078,7 +1070,9 @@ void ReplicatedPG::do_op(OpRequestRef op)
   // operation won't apply properly on the backfill_target.  (the
   // opposite is not a problem; if the target is after the line, we
   // don't apply on the backfill_target and it doesn't matter.)
-  bool before_backfill = is_before_backfill(obc->obs.oi.soid);
+  bool before_backfill = false;
+  if (!backfill_targets.empty())
+    before_backfill = is_before_backfill(obc->obs.oi.soid);
 
   // src_oids
   map<hobject_t,ObjectContextRef> src_obc;
