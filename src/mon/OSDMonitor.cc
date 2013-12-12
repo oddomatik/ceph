@@ -1182,6 +1182,15 @@ bool OSDMonitor::preprocess_boot(MOSDBoot *m)
   }
 
   assert(m->get_orig_source_inst().name.is_osd());
+
+  // check if osd has required features to boot
+  if ((osdmap.get_features(NULL) & CEPH_FEATURE_OSD_ERASURE_CODES) &&
+      !(m->osd_features & CEPH_FEATURE_OSD_ERASURE_CODES)) {
+    dout(0) << __func__ << " osdmap requires Erasure Codes but osd at "
+            << m->get_orig_source_inst()
+            << " doesn't announce support -- ignore" << dendl;
+    goto ignore;
+  }
   
   // already booted?
   if (osdmap.is_up(from) &&
@@ -1224,11 +1233,12 @@ bool OSDMonitor::prepare_boot(MOSDBoot *m)
 	  << " cluster_addr " << m->cluster_addr
 	  << " hb_back_addr " << m->hb_back_addr
 	  << " hb_front_addr " << m->hb_front_addr
+          << " features " << m->osd_features
 	  << dendl;
 
   assert(m->get_orig_source().is_osd());
   int from = m->get_orig_source().num();
-  
+
   // does this osd exist?
   if (from >= osdmap.get_max_osd()) {
     dout(1) << "boot from osd." << from << " >= max_osd " << osdmap.get_max_osd() << dendl;
@@ -1337,6 +1347,8 @@ bool OSDMonitor::prepare_boot(MOSDBoot *m)
 	xi.laggy_probability * (1.0 - g_conf->mon_osd_laggy_weight);
       dout(10) << " laggy, now xi " << xi << dendl;
     }
+    // set features shared by the osd
+    xi.features = m->osd_features;
     pending_inc.new_xinfo[from] = xi;
 
     // wait
