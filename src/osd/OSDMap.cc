@@ -94,11 +94,12 @@ void osd_xinfo_t::dump(Formatter *f) const
 
 void osd_xinfo_t::encode(bufferlist& bl) const
 {
-  ENCODE_START(1, 1, bl);
+  ENCODE_START(2, 1, bl);
   ::encode(down_stamp, bl);
   __u32 lp = laggy_probability * 0xfffffffful;
   ::encode(lp, bl);
   ::encode(laggy_interval, bl);
+  ::encode(features, bl);
   ENCODE_FINISH(bl);
 }
 
@@ -110,6 +111,8 @@ void osd_xinfo_t::decode(bufferlist::iterator& bl)
   ::decode(lp, bl);
   laggy_probability = (float)lp / (float)0xffffffff;
   ::decode(laggy_interval, bl);
+  if (struct_v >= 2)
+    ::decode(features, bl);
   DECODE_FINISH(bl);
 }
 
