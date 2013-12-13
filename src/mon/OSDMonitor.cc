@@ -2961,8 +2961,56 @@ int OSDMonitor::prepare_command_pool_set(map<string,cmd_vartype> &cmdmap,
       return -EINVAL;
     }
     ss << " pool " << pool << " flag hashpspool";
+  } else if (var == "erasure-codes") {
+    if (val == "true") {
+
+      if (p.flags & pg_pool_t::FLAG_ERASURE_CODES) {
+        ss << "pool " << pool << " already enabled for erasure codes";
+        return 0;
+      }
+
+      set<int32_t> all_osds;
+      osdmap.get_all_osds(all_osds);
+
+      set<int32_t> not_ec_capable;
+      for (set<int32_t>::iterator it = all_osds.begin();
+           it != all_osds.end(); ++it) {
+        if (!osdmap.is_up(*it))
+          continue;
+
+        const osd_xinfo_t &xinfo = osdmap.get_xinfo(*it);
+        if (!(xinfo.features & CEPH_FEATURE_OSD_ERASURE_CODES))
+          not_ec_capable.insert(*it);
+      }
+
+      if (!not_ec_capable.empty()) {
+        ss << "osds must all support Erasure Codes; ";
+        for (set<int32_t>::iterator it = not_ec_capable.begin();
+             it != not_ec_capable.end(); ++it) {
+          ss << "osd." << *it << " ";
+        }
+        ss << "don't";
+        return -ENOTSUP;
+      }
+
+      p.flags |= pg_pool_t::FLAG_ERASURE_CODES;
+      ss << "set";
+    } else if (val == "false") {
+
+      if (!(p.flags & pg_pool_t::FLAG_ERASURE_CODES)) {
+        ss << "pool " << pool << " doesn't have erasure codes enabled";
+        return 0;
+      }
+
+      p.flags ^= pg_pool_t::FLAG_ERASURE_CODES;
+      ss << "unset";
+    } else {
+      ss << "expecting value 0 or 1, got '" << n << "'";
+      return -EINVAL;
+    }
+    ss << " pool " << pool << " flag erasure-codes";
   } else {
-    ss << "unrecognized variable '" << var << "'";
+    ss << "unrecognized value '" << var << "', expecting 'true' or 'false'";
     return -EINVAL;
   }
 
