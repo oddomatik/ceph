@@ -705,10 +705,12 @@ struct pg_pool_t {
   enum {
     FLAG_HASHPSPOOL = 1, // hash pg seed and pool together (instead of adding)
     FLAG_FULL       = 2, // pool is full
+    FLAG_ERASURE_CODES = 4, // erasure codes have been set
   };
 
   static const char *get_flag_name(int f) {
     switch (f) {
+    case FLAG_ERASURE_CODES: return "erasure-codes";
     case FLAG_HASHPSPOOL: return "hashpspool";
     case FLAG_FULL: return "full";
     default: return "???";
