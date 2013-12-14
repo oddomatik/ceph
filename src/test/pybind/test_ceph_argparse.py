@@ -946,7 +946,7 @@ class TestOSD(TestArgparse):
     def test_pool_set(self):
         for var in ('size', 'min_size', 'crash_replay_interval',
                     'pg_num', 'pgp_num', 'crush_ruleset',
-					'hashpspool'):
+                    'hashpspool', 'erasure-codes'):
             self.assert_valid_command(['osd', 'pool',
                                        'set', 'poolname', var, 'value'])
         assert_equal({}, validate_command(sigdict, ['osd', 'pool',
