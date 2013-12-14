@@ -335,6 +335,11 @@ ceph osd pool set data hashpspool 1
 expect_false ceph osd pool set data hashpspool asdf
 expect_false ceph osd pool set data hashpspool 2
 
+ceph osd pool set data erasure-codes true
+ceph osd pool set data erasure-codes false
+expect_false ceph osd pool set data erasure-codes asdf
+expect_false ceph osd pool set data erasure-codes 2
+
 ceph osd pool get rbd crush_ruleset | grep 'crush_ruleset: 2'
 
 ceph osd thrash 10
