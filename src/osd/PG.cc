@@ -1018,6 +1018,16 @@ bool PG::choose_acting(int& newest_update_osd)
     return false;
   }
 
+  bool compat_mode = cct->_conf->osd_acting_compat;  // Check map for all OSDs updated 
+
+  if (compat_mode) {
+    // May not be necessary, but the old mechanism only did one at a time
+    if (!backfill.empty())
+      backfill.resize(1);
+
+    want.insert(want.end(), backfill.begin(), backfill.end());
+  }
+
   if (want != acting) {
     dout(10) << "choose_acting want " << want << " != acting " << acting
 	     << ", requesting pg_temp change" << dendl;
@@ -1038,7 +1048,8 @@ bool PG::choose_acting(int& newest_update_osd)
   // we've accepted the acting set.  Now we can create
   // actingbackfill and backfill_targets vectors.
   actingbackfill = acting;
-  actingbackfill.insert(actingbackfill.end(), backfill.begin(), backfill.end());
+  if (!compat_mode)
+    actingbackfill.insert(actingbackfill.end(), backfill.begin(), backfill.end());
   assert(backfill_targets.empty() || backfill_targets == backfill);
   if (backfill_targets.empty()) {
     backfill_targets = backfill;

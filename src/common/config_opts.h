@@ -528,6 +528,8 @@ OPTION(osd_max_object_size, OPT_U64, 100*1024L*1024L*1024L) // OSD's maximum obj
 OPTION(osd_max_attr_size, OPT_U64, 0)
 
 OPTION(osd_objectstore, OPT_STR, "filestore")  // ObjectStore backend type
+// Maintain compatibility with older OSDs, can be set to false for testing
+OPTION(osd_acting_compat, OPT_BOOL, true)
 
 /// filestore wb throttle limits
 OPTION(filestore_wbthrottle_enable, OPT_BOOL, true)
